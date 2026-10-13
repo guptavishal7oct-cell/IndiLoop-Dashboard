@@ -1,0 +1,38 @@
+{
+  "source": "London Metal Exchange (LME)",
+  "price_date": "2026-10-13",
+  "currency": "USD",
+  "unit": "metric_tonne",
+  "prices": [
+    {
+      "metal": "Lithium",
+      "benchmark": "LME Lithium Hydroxide Monohydrate CIF",
+      "price": null
+    },
+    {
+      "metal": "Nickel",
+      "benchmark": "LME Nickel metal",
+      "price": null
+    },
+    {
+      "metal": "Cobalt",
+      "benchmark": "LME Cobalt metal",
+      "price": null
+    },
+    {
+      "metal": "Manganese",
+      "benchmark": "Not available",
+      "price": null
+    },
+    {
+      "metal": "Copper",
+      "benchmark": "LME Copper Grade A metal",
+      "price": null
+    },
+    {
+      "metal": "Aluminium",
+      "benchmark": "LME Aluminium metal",
+      "price": null
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "source": "Shanghai Metals Market (SMM)",
+  "price_date": "2026-10-13",
+  "currency": "USD",
+  "unit": "metric_tonne",
+  "prices": [
+    {
+      "metal": "Lithium",
+      "benchmark": "Battery-grade lithium carbonate",
+      "price": null
+    },
+    {
+      "metal": "Nickel",
+      "benchmark": "Nickel cathode metal",
+      "price": null
+    },
+    {
+      "metal": "Cobalt",
+      "benchmark": "Cobalt metal",
+      "price": null
+    },
+    {
+      "metal": "Manganese",
+      "benchmark": "Electrolytic manganese metal",
+      "price": null
+    },
+    {
+      "metal": "Copper",
+      "benchmark": "Copper cathode metal",
+      "price": null
+    },
+    {
+      "metal": "Aluminium",
+      "benchmark": "Aluminium ingot metal",
+      "price": null
+    }
+  ]
+}
