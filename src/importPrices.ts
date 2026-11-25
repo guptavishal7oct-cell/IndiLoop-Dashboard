@@ -99,7 +99,9 @@ export function parseMarketJSON(raw: string, market: Market, today = new Date(),
     if (!validIsoDate(quoteDate) || ageInDays(quoteDate, today) < 0) throw new Error(`${metal}: invalid quotation date; use YYYY-MM-DD on or before today.`);
     if (row.source_url !== undefined && row.source_url !== null && typeof row.source_url !== 'string') throw new Error(`${metal}: source_url must be a string URL.`);
     const sourceUrl = typeof row.source_url === 'string' && /^https?:\/\//i.test(row.source_url) ? row.source_url : undefined;
-    const quote: Quote = { priceUsdPerTonne: price, benchmark: benchmark.trim(), date: quoteDate, factor, factorDescription: description, sourceUrl };
+    const priceType = row.price_type;
+    if (market === 'lme' && priceType != null && priceType !== 'fastmarkets' && priceType !== '3_month_closing' && priceType !== 'current') throw new Error(`${metal}: invalid price_type.`);
+    const quote: Quote = { priceType: market === 'lme' && (priceType === 'fastmarkets' || priceType === '3_month_closing' || priceType === 'current') ? priceType : null, priceUsdPerTonne: price, benchmark: benchmark.trim(), date: quoteDate, factor, factorDescription: description, sourceUrl };
     prices[metal] = quote;
     const age = ageInDays(quoteDate, today);
     if (age > 7) warnings.push(`${metal} quote (${quoteDate}) is ${age} days old.`);

@@ -1,3 +1,7 @@
+## Market selector update
+
+Choose SMM, LME, or both. The prompt, JSON panels, comparison columns and results follow the selection; hidden imported data is retained. The valuation table shows only Li, Ni, Co and Mn. The six-metal JSON schema remains compatible with prior imports. LME prompts request Fastmarkets M1 closing, then 3-month closing, then official cash settlement; `price_type` is displayed if present. Old JSON without the field remains accepted.
+
 # IndiLoop Market Intelligence V3.2 — Manual SMM vs LME + AI Prompt + USD/INR
 
 A **standalone React + TypeScript** website for indicative black-mass valuation using **two manually pasted JSON documents**, with a copyable AI-research prompt and free daily USD/INR exchange-rate lookup. The original IndiLoop dark/teal UI is preserved. **No backend, paid price feed, or API key is needed.**

@@ -7,32 +7,50 @@
     {
       "metal": "Lithium",
       "benchmark": "LME Lithium Hydroxide Monohydrate CIF",
-      "price": null
+      "price": null,
+      "date": null,
+      "source_url": null,
+      "price_type": null
     },
     {
       "metal": "Nickel",
       "benchmark": "LME Nickel metal",
-      "price": null
+      "price": null,
+      "date": null,
+      "source_url": null,
+      "price_type": null
     },
     {
       "metal": "Cobalt",
       "benchmark": "LME Cobalt metal",
-      "price": null
+      "price": null,
+      "date": null,
+      "source_url": null,
+      "price_type": null
     },
     {
       "metal": "Manganese",
       "benchmark": "Not available",
-      "price": null
+      "price": null,
+      "date": null,
+      "source_url": null,
+      "price_type": null
     },
     {
       "metal": "Copper",
       "benchmark": "LME Copper Grade A metal",
-      "price": null
+      "price": null,
+      "date": null,
+      "source_url": null,
+      "price_type": null
     },
     {
       "metal": "Aluminium",
       "benchmark": "LME Aluminium metal",
-      "price": null
+      "price": null,
+      "date": null,
+      "source_url": null,
+      "price_type": null
     }
   ]
 }
