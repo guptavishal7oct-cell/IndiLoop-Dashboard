@@ -15,15 +15,3 @@ describe('research prompt',()=>{
    expect((p.match(/"unit": "metric_tonne"/g)||[]).length).toBe(2);
  });
 });
-
-describe('market selection',()=>{
- for (const [market,own,other] of [['lme','https://www.lme.com/','https://www.metal.com/'],['smm','https://www.metal.com/','https://www.lme.com/']] as const) {
-  it(`requests only ${market} with seven materials`,()=>{
-   const prompt=buildMarketPricePrompt(market);
-   expect(prompt).toContain(own);expect(prompt).not.toContain(other);
-   expect(prompt).toContain('OUTPUT EXACTLY ONE');
-   expect((prompt.match(/"metal":/g)||[]).length).toBe(7);
-   expect(prompt).toContain('"metal":"Steel"');
-  });
- }
-});

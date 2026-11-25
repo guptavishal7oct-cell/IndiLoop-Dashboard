@@ -1,6 +1,5 @@
 export const METAL_IDS = ['lithium', 'nickel', 'cobalt', 'manganese', 'copper', 'aluminium'] as const;
 export type MetalId = (typeof METAL_IDS)[number];
-export type QuoteMetalId = MetalId | 'steel';
 export type Market = 'smm' | 'lme';
 export type Composition = Record<MetalId, number | string>;
 export interface MetalDef { id: MetalId; name: string; symbol: string; }
@@ -27,7 +26,7 @@ export interface ImportedMarket {
   market: Market;
   label: string;
   date: string;
-  prices: Partial<Record<QuoteMetalId, Quote>>;
+  prices: Partial<Record<MetalId, Quote>>;
   warnings: string[];
   isExample: boolean;
 }

@@ -9,7 +9,6 @@ export const sampleJSON = (market: 'smm' | 'lme', today = new Date()): string =>
     { metal: 'Manganese', benchmark: 'Electrolytic manganese metal', price: 2200 },
     { metal: 'Copper', benchmark: 'Copper cathode metal', price: 11000 },
     { metal: 'Aluminium', benchmark: 'Aluminium ingot metal', price: 2800 },
-    { metal: 'Steel', benchmark: 'Steel finished product', price: null },
   ] : [
     { metal: 'Lithium', benchmark: 'LME Lithium Hydroxide Monohydrate CIF (Fastmarkets)', price: 15500 },
     { metal: 'Nickel', benchmark: 'LME Nickel metal', price: 18500 },
@@ -17,7 +16,6 @@ export const sampleJSON = (market: 'smm' | 'lme', today = new Date()): string =>
     { metal: 'Manganese', benchmark: 'Not an LME metal contract benchmark', price: null },
     { metal: 'Copper', benchmark: 'LME Copper Grade A metal', price: 10500 },
     { metal: 'Aluminium', benchmark: 'LME Aluminium metal', price: 2750 },
-    { metal: 'Steel', benchmark: 'LME Steel finished product', price: null },
   ];
   return JSON.stringify({
     source: isSmm ? 'FICTIONAL SMM SAMPLE - NOT LIVE' : 'FICTIONAL LME SAMPLE - NOT LIVE',

@@ -4,14 +4,14 @@ A **standalone React + TypeScript** website for indicative black-mass valuation 
 
 ## Buyer pricing update
 
-Only Ni, Co, Mn and Li with elemental assay at least 5% are payable; Cu and Al are excluded regardless of content. Default payable is 70%, editable. Missing eligible quotes give partial totals if another eligible quote exists, otherwise the total is unavailable. If no metal qualifies, an imported market returns zero. Per-kg and per-tonne values use the entire batch weight. Compound quotations are converted to elemental-equivalent prices before applying the formula.
+Only Ni, Co, Mn and Li with elemental assay at least 5% are payable; Cu and Al are excluded regardless of content. Default payable is 60%, editable. Missing eligible quotes give partial totals if another eligible quote exists, otherwise the total is unavailable. If no metal qualifies, an imported market returns zero. Per-kg and per-tonne values use the entire batch weight. Compound quotations are converted to elemental-equivalent prices before applying the formula.
 
 ## What you get
 
 - Top navigation: **Home** and **Black Mass Price Calculator**. Refresh-safe `HashRouter` (`/#/calculator` remains on the calculator after refresh).
 - **Copy AI price-research prompt** button: copies strict instructions asking a browsing AI to research SMM and LME separately, find the latest verified price per metal (or last verified recorded quote), return two import-compatible JSON blocks, and include individual quote dates/URLs. If copying is blocked, the app displays selectable prompt text.
 - Two JSON editors: **Shanghai Metals Market (SMM)** and **London Metal Exchange (LME)**, each with Apply, Template, and Clear actions.
-- Enter extracted **black mass tonnes**, **elemental metal composition percentages**, and optional **benchmark payable percentage** (70% by default).
+- Enter extracted **black mass tonnes**, **elemental metal composition percentages**, and optional **benchmark payable percentage** (60% by default).
 - Side-by-side metal prices and corresponding values **in USD and INR** for each source, followed by three result cards **per kg, per tonne, total** in both currencies for each source.
 - **Frankfurter USD → INR**: fetches its latest *available daily reference rate* from `https://api.frankfurter.dev/v2/rate/USD/INR`, shows the observation date and status, supports refresh, manual override, and last successfully saved rate if offline. This is **not an intraday forex trading price**; Frankfurter needs no API key.
 - Detects malformed JSON, duplicate rows, unsupported currency/units, salt/metal benchmark mismatch, impossible assay and missing quotations. Missing eligible prices are clearly flagged.
@@ -150,9 +150,3 @@ IndiLoop-Dashboard/
 ## About names, sourcing, and rights
 
 `metal.com` is **Shanghai Metals Market (SMM)**, a price-reporting agency, **not** a "Shanghai Metal Exchange". `lme.com` is the **London Metal Exchange**. Both may have terms around redistributing published prices. This code **does not scrape their sites or ship any of their real prices**; you alone provide the numbers. The copied prompt assists research but **does not guarantee access, accuracy, or republishing rights**. Use only authorized quotations for public redistribution. Ensure you have rights to use and display third-party quotations, particularly on a public website.
-
-## Separate recovered materials
-Copper, aluminium and steel have their own weight, purity, INR/kg price and payable percentage (80% each by default). Select SMM or LME as the automatic source; if its quote is missing, manually enter INR/kg. Automatic prices follow the applied JSON and FX rate; manual overrides remain until reset to auto. The table is independent of black mass. Older six-metal JSONs remain valid. Steel is a finished-product benchmark proxy, not a scrap offer.
-
-## V4 combined update
-Market selection in Step 02 controls the research prompt, JSON import cards, comparison columns and black mass results. Both mode preserves side-by-side comparison. Switching retains imported JSON. Separate materials follow the selected market in single-market mode; in Both mode their automatic price source is selectable independently. Manual price overrides remain until reset. Black mass payable defaults to 70%; separate material payables default to 80%. GitHub Pages artifacts are uniquely named per run attempt.

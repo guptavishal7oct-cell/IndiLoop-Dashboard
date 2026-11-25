@@ -33,13 +33,6 @@
       "metal": "Aluminium",
       "benchmark": "LME Aluminium metal",
       "price": null
-    },
-    {
-      "metal": "Steel",
-      "benchmark": "Steel finished product",
-      "price": null,
-      "date": null,
-      "source_url": null
     }
   ]
 }
