@@ -153,3 +153,6 @@ IndiLoop-Dashboard/
 
 ## Separate recovered materials
 Copper, aluminium and steel have their own weight, purity, INR/kg price and payable percentage (80% each by default). Select SMM or LME as the automatic source; if its quote is missing, manually enter INR/kg. Automatic prices follow the applied JSON and FX rate; manual overrides remain until reset to auto. The table is independent of black mass. Older six-metal JSONs remain valid. Steel is a finished-product benchmark proxy, not a scrap offer.
+
+## V4 combined update
+Market selection in Step 02 controls the research prompt, JSON import cards, comparison columns and black mass results. Both mode preserves side-by-side comparison. Switching retains imported JSON. Separate materials follow the selected market in single-market mode; in Both mode their automatic price source is selectable independently. Manual price overrides remain until reset. Black mass payable defaults to 70%; separate material payables default to 80%. GitHub Pages artifacts are uniquely named per run attempt.

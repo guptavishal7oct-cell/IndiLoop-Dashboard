@@ -1,7 +1,8 @@
 /** Paste this prompt into a research assistant that can browse the web. It requests
  * the exact JSON schema accepted by the V3 manual-market importer. */
-export function buildMarketPricePrompt(): string {
-  return `Research the MOST RECENT VERIFIABLE published commodity price for each of the seven materials, independently for:
+export type MarketSelection = 'smm' | 'lme' | 'both';
+export function buildMarketPricePrompt(selection: MarketSelection = 'both'): string {
+  const prompt = `Research the MOST RECENT VERIFIABLE published commodity price for each of the seven materials, independently for:
 1. Shanghai Metals Market (SMM) — https://www.metal.com/
 2. London Metal Exchange (LME) — https://www.lme.com/
 
@@ -56,4 +57,12 @@ SECOND JSON (LME):
 }
 
 You MUST replace the YYYY-MM-DD placeholders with valid real dates and replace each available null price with its accurately verified value, plus its exact quote date and source_url. If a metal lacks a verified quote, preserve null and do not include a fictitious date or URL.`;
+  if (selection === 'both') return prompt;
+  const [intro, rest] = prompt.split('OUTPUT EXACTLY TWO');
+  const smmStart = rest.indexOf('FIRST JSON (SMM):');
+  const lmeStart = rest.indexOf('SECOND JSON (LME):');
+  const tailStart = rest.indexOf('You MUST replace');
+  const schema = selection === 'smm' ? rest.slice(smmStart,lmeStart) : rest.slice(lmeStart,tailStart);
+  const rules = intro.split('\n').filter(line => selection === 'smm' ? !line.startsWith('2. London') && !line.startsWith('- For LME') : !line.startsWith('1. Shanghai') && !line.startsWith('- For SMM')).join('\n');
+  return rules.replace('independently for:', 'for:').replace('Do not replace unavailable LME values with SMM, other exchanges, third-party estimates, or AI-generated numbers.', 'Do not substitute another provider, third-party estimates, or AI-generated numbers.') + 'OUTPUT EXACTLY ONE valid JSON code block. Keep the schema and all seven material rows.\n\n' + schema.replace(/^(FIRST JSON \(SMM\)|SECOND JSON \(LME\)):/, 'JSON:') + rest.slice(tailStart);
 }

@@ -10,7 +10,7 @@ import { ageInDays, parseMarketJSON } from './importPrices';
 import { calculateComparison, type ValuationSide } from './valuation';
 import { SeparateMaterials } from './SeparateMaterials';
 import { blankTemplate, sampleJSON } from './examples';
-import { buildMarketPricePrompt } from './aiPrompt';
+import { buildMarketPricePrompt, type MarketSelection } from './aiPrompt';
 import { convertedInr, getUsdInrRate, validUsdInrRate, type FxQuote } from './exchangeRate';
 
 const money = (value: number | null, decimals = 2) => value === null || !Number.isFinite(value) ? '—'
@@ -107,6 +107,10 @@ function Results({label, market, data, tonnes, example, rate}: {label:string; ma
   </div>;
 }
 function CalculatorPage() {
+  const [selection, setSelection] = useState<MarketSelection>(() => { const saved = getSaved('indiloop.market.v4','both'); return saved === 'smm' || saved === 'lme' ? saved : 'both'; });
+  const showSmm = selection !== 'lme';
+  const showLme = selection !== 'smm';
+  function changeMarket(value: MarketSelection) { setSelection(value); setCopyStatus(''); try { localStorage.setItem('indiloop.market.v4',value); } catch { /* optional */ } }
   const [tonnes, setTonnes] = useState(() => getSaved('indiloop.tonnes.v3','1'));
   const [payable, setPayable] = useState(() => getSaved('indiloop.payable.v5','70'));
   const [composition, setComposition] = useState<Composition>(loadAssay);
@@ -151,7 +155,7 @@ function CalculatorPage() {
     setFxRateInput(value);setFxDate(null);setFxStatus('manual');setFxError('');
   }
   async function copyResearchPrompt() {
-    const text = buildMarketPricePrompt();
+    const text = buildMarketPricePrompt(selection);
     try {
       await navigator.clipboard.writeText(text);
       setCopyStatus('Copied! Paste into a web-enabled AI assistant.');
@@ -190,17 +194,16 @@ function CalculatorPage() {
   }
   function loadExample() {
     const smmJson = sampleJSON('smm'); const lmeJson = sampleJSON('lme');
-    setRawSmm(smmJson);setRawLme(lmeJson);
-    setSmm(parseMarketJSON(smmJson,'smm',new Date(),true));
-    setLme(parseMarketJSON(lmeJson,'lme',new Date(),true));
+    if (showSmm) { setRawSmm(smmJson); setSmm(parseMarketJSON(smmJson,'smm',new Date(),true)); }
+    if (showLme) { setRawLme(lmeJson); setLme(parseMarketJSON(lmeJson,'lme',new Date(),true)); }
     setComposition({...SAMPLE_COMPOSITION});setTonnes('1');setPayable('70');
     setErrorSmm('');setErrorLme('');
-    try {localStorage.setItem('indiloop.smm.example.v3','true');localStorage.setItem('indiloop.lme.example.v3','true');} catch {/* ignore */}
+    try {if (showSmm) localStorage.setItem('indiloop.smm.example.v3','true'); if (showLme) localStorage.setItem('indiloop.lme.example.v3','true');} catch {/* ignore */}
   }
   function clearMarket(market: Market) { editJSON(market, ''); }
   function setTemplate(market:Market) { editJSON(market,blankTemplate(market)); }
   function changePercent(id:MetalId, value:string) {setComposition(old=>({...old,[id]:value}));}
-  const dated = [smm,lme].filter((r): r is ImportedMarket => !!r);
+  const dated = [showSmm ? smm : null,showLme ? lme : null].filter((r): r is ImportedMarket => !!r);
   const hasOld = dated.some(r=>r.warnings.some(w=>w.includes('days old')));
   return <main className="container calc-main">
     <div className="breadcrumb"><NavLink to="/">Home</NavLink><ChevronRight size={14}/><span className="crumb-active">Black Mass Price Calculator</span></div>
@@ -212,10 +215,11 @@ function CalculatorPage() {
       </div>
     </section>
     <section className="json-section"><div className="panel-heading json-section-heading"><div><span className="overline">STEP 02</span><h2>Import market quotations</h2><p>Use the provided JSON format, with prices in USD per metric tonne and an ISO quotation date.</p></div><div className="import-toolbar"><button type="button" className="button primary" onClick={() => void copyResearchPrompt()}><Copy size={16}/> Copy AI price-research prompt</button><button type="button" className="button outlined" onClick={loadExample}><Code2 size={15}/> Load fictional examples</button></div></div>
+      <div className="market-selector"><label htmlFor="market-selection">Market selection</label><select id="market-selection" value={selection} onChange={e=>changeMarket(e.target.value as MarketSelection)}><option value="lme">London Metal Exchange (LME)</option><option value="smm">Shanghai Metals Market (SMM)</option><option value="both">Both markets — compare LME & SMM</option></select><small>Controls the research prompt, JSON inputs and black mass valuation. Switching markets retains imported data.</small></div>
       {copyStatus && <p className="copy-notice" role="status"><CheckCircle2 size={16}/>{copyStatus}</p>}
-      {showPrompt && <div className="copy-fallback"><label htmlFor="ai-prompt">Research prompt (click inside and press Ctrl+A, Ctrl+C)</label><textarea id="ai-prompt" readOnly value={buildMarketPricePrompt()} onFocus={e=>e.target.select()}/><button type="button" className="mini-action" onClick={()=>setShowPrompt(false)}>Close prompt</button></div>}
+      {showPrompt && <div className="copy-fallback"><label htmlFor="ai-prompt">Research prompt (click inside and press Ctrl+A, Ctrl+C)</label><textarea id="ai-prompt" readOnly value={buildMarketPricePrompt(selection)} onFocus={e=>e.target.select()}/><button type="button" className="mini-action" onClick={()=>setShowPrompt(false)}>Close prompt</button></div>}
       <p className="research-hint">Requests the latest available <strong>verified</strong> quote per metal from each source, or the last published quote if today's is unavailable. Missing prices stay <code>null</code>. Each metal can have its own quote date and source URL.</p>
-      <div className="json-grid"><JsonCard market="smm" raw={rawSmm} imported={smm} error={errorSmm} onChange={v=>editJSON('smm',v)} onApply={()=>apply('smm')} onTemplate={()=>setTemplate('smm')} onClear={()=>clearMarket('smm')}/><JsonCard market="lme" raw={rawLme} imported={lme} error={errorLme} onChange={v=>editJSON('lme',v)} onApply={()=>apply('lme')} onTemplate={()=>setTemplate('lme')} onClear={()=>clearMarket('lme')}/></div>
+      <div className={`json-grid ${selection !== 'both' ? 'single-market' : ''}`}>{showSmm && <JsonCard market="smm" raw={rawSmm} imported={smm} error={errorSmm} onChange={v=>editJSON('smm',v)} onApply={()=>apply('smm')} onTemplate={()=>setTemplate('smm')} onClear={()=>clearMarket('smm')}/>}{showLme && <JsonCard market="lme" raw={rawLme} imported={lme} error={errorLme} onChange={v=>editJSON('lme',v)} onApply={()=>apply('lme')} onTemplate={()=>setTemplate('lme')} onClear={()=>clearMarket('lme')}/>}</div>
       <div className="json-hint"><CircleHelp size={17}/><span>Shanghai = <strong>Shanghai Metals Market (SMM)</strong>, a price-reporting provider, not a metals exchange. London = <strong>LME</strong>. Some benchmarks differ (e.g. lithium carbonate vs lithium hydroxide) and LME may have no manganese quotation. Missing values must be <code>null</code>, not zero.</span></div>
     </section>
     <section className="fx-panel"><div className="panel-heading"><div><span className="overline">STEP 03</span><h2>USD → INR exchange rate</h2><p>Frankfurter's latest available daily reference rate. Use the manual override if offline or for scenario analysis.</p></div><span className="fx-icon"><IndianRupee size={24}/></span></div>
@@ -225,24 +229,24 @@ function CalculatorPage() {
       {fxError && <p className="fx-error" role="alert"><AlertCircle size={15}/>{fxError} {fxRate === null ? 'Enter an exchange rate manually.' : 'A cached rate is shown with its original date.'}</p>}
     </section>
     <section className="table-panel"><div className="panel-heading table-heading"><div><span className="overline">STEP 04</span><h2>Composition & market comparison</h2><p>Edit elemental composition. Only Ni, Co, Mn and Li at 5% or above contribute to value.</p></div><button type="button" className="text-button" onClick={()=>setComposition({...EMPTY_COMPOSITION})}><RotateCcw size={15}/> Clear assay</button></div>
-      <div className="table-wrap"><table className="metal-table compare-table"><thead><tr><th rowSpan={2}>METAL</th><th rowSpan={2}>% IN BLACK MASS</th><th rowSpan={2}>WEIGHT (KG)</th><th colSpan={2} className="smm-head">SHANGHAI · SMM</th><th colSpan={2} className="lme-head">LONDON · LME</th></tr><tr><th>PRICE (USD/TONNE)</th><th>METAL VALUE (USD)</th><th>PRICE (USD/TONNE)</th><th>METAL VALUE (USD)</th></tr></thead><tbody>{valuation.rows.map(row => <tr key={row.id}><td><div className="metal-name"><span className="element-badge">{row.symbol}</span><span><strong>{row.name}</strong><small>{row.eligibilityReason}</small></span></div></td>
+      <div className="table-wrap"><table className={`metal-table compare-table ${selection !== 'both' ? 'single-market ' + selection : ''}`}><thead><tr><th rowSpan={2}>METAL</th><th rowSpan={2}>% IN BLACK MASS</th><th rowSpan={2}>WEIGHT (KG)</th>{showSmm && <th colSpan={2} className="smm-head">SHANGHAI · SMM</th>}{showLme && <th colSpan={2} className="lme-head">LONDON · LME</th>}</tr><tr>{showSmm && <><th>PRICE (USD/TONNE)</th><th>METAL VALUE (USD)</th></>}{showLme && <><th>PRICE (USD/TONNE)</th><th>METAL VALUE (USD)</th></>}</tr></thead><tbody>{valuation.rows.map(row => <tr key={row.id}><td><div className="metal-name"><span className="element-badge">{row.symbol}</span><span><strong>{row.name}</strong><small>{row.eligibilityReason}</small></span></div></td>
         <td><div className="percent-cell"><input aria-label={`${row.name} percentage`} type="number" min="0" max="100" step="any" value={composition[row.id]} onChange={e=>changePercent(row.id,e.target.value)}/><span>%</span></div></td>
         <td className="mono">{valuation.valid ? number(row.massKg,3) : '—'} <small>kg</small></td>
-        <td className="mono market-price" title={row.smmBenchmark ?? 'No SMM quote'}>{money(row.smmPrice)}<small className="inr-secondary">{fxRate !== null && row.smmPrice !== null ? rupees(convertedInr(row.smmPrice,fxRate)) : ''}</small><small>{row.smmBasis ?? 'No quotation'}</small></td>
-        <td className="mono value-cell">{valuation.valid ? money(row.smmValue) : '—'}{fxRate !== null && valuation.valid && row.smmValue !== null && <small className="inr-secondary">{rupees(convertedInr(row.smmValue,fxRate))}</small>}</td>
-        <td className="mono market-price" title={row.lmeBenchmark ?? 'No LME quote'}>{money(row.lmePrice)}<small className="inr-secondary">{fxRate !== null && row.lmePrice !== null ? rupees(convertedInr(row.lmePrice,fxRate)) : ''}</small><small>{row.lmeBasis ?? 'No quotation'}</small></td>
-        <td className="mono value-cell lme-value">{valuation.valid ? money(row.lmeValue) : '—'}{fxRate !== null && valuation.valid && row.lmeValue !== null && <small className="inr-secondary">{rupees(convertedInr(row.lmeValue,fxRate))}</small>}</td></tr>)}</tbody>
-        <tfoot><tr><td>VALUATION TOTAL</td><td>{number(valuation.totalPercent)}%</td><td>{valuation.valid ? number(valuation.totalKg,2)+' kg batch' : 'Check inputs'}</td><td>{valuation.smm.totalUsd !== null && valuation.smm.missing.length ? `Partial · ${valuation.smm.missing.length} unpriced` : valuation.smm.missing.length ? 'No priced metals' : 'After payable %'}</td><td className="value-cell">{money(valuation.smm.totalUsd)}{fxRate !== null && valuation.smm.totalUsd !== null && <small className="inr-secondary">{rupees(convertedInr(valuation.smm.totalUsd,fxRate))}</small>}</td><td>{valuation.lme.totalUsd !== null && valuation.lme.missing.length ? `Partial · ${valuation.lme.missing.length} unpriced` : valuation.lme.missing.length ? 'No priced metals' : 'After payable %'}</td><td className="value-cell lme-value">{money(valuation.lme.totalUsd)}{fxRate !== null && valuation.lme.totalUsd !== null && <small className="inr-secondary">{rupees(convertedInr(valuation.lme.totalUsd,fxRate))}</small>}</td></tr></tfoot>
+        {showSmm && <><td className="mono market-price" title={row.smmBenchmark ?? 'No SMM quote'}>{money(row.smmPrice)}<small className="inr-secondary">{fxRate !== null && row.smmPrice !== null ? rupees(convertedInr(row.smmPrice,fxRate)) : ''}</small><small>{row.smmBasis ?? 'No quotation'}</small></td>
+        <td className="mono value-cell">{valuation.valid ? money(row.smmValue) : '—'}{fxRate !== null && valuation.valid && row.smmValue !== null && <small className="inr-secondary">{rupees(convertedInr(row.smmValue,fxRate))}</small>}</td></>}
+        {showLme && <><td className="mono market-price" title={row.lmeBenchmark ?? 'No LME quote'}>{money(row.lmePrice)}<small className="inr-secondary">{fxRate !== null && row.lmePrice !== null ? rupees(convertedInr(row.lmePrice,fxRate)) : ''}</small><small>{row.lmeBasis ?? 'No quotation'}</small></td>
+        <td className="mono value-cell lme-value">{valuation.valid ? money(row.lmeValue) : '—'}{fxRate !== null && valuation.valid && row.lmeValue !== null && <small className="inr-secondary">{rupees(convertedInr(row.lmeValue,fxRate))}</small>}</td></>}</tr>)}</tbody>
+        <tfoot><tr><td>VALUATION TOTAL</td><td>{number(valuation.totalPercent)}%</td><td>{valuation.valid ? number(valuation.totalKg,2)+' kg batch' : 'Check inputs'}</td>{showSmm && <><td>{valuation.smm.totalUsd !== null && valuation.smm.missing.length ? `Partial · ${valuation.smm.missing.length} unpriced` : valuation.smm.missing.length ? 'No priced metals' : 'After payable %'}</td><td className="value-cell">{money(valuation.smm.totalUsd)}{fxRate !== null && valuation.smm.totalUsd !== null && <small className="inr-secondary">{rupees(convertedInr(valuation.smm.totalUsd,fxRate))}</small>}</td></>}{showLme && <><td>{valuation.lme.totalUsd !== null && valuation.lme.missing.length ? `Partial · ${valuation.lme.missing.length} unpriced` : valuation.lme.missing.length ? 'No priced metals' : 'After payable %'}</td><td className="value-cell lme-value">{money(valuation.lme.totalUsd)}{fxRate !== null && valuation.lme.totalUsd !== null && <small className="inr-secondary">{rupees(convertedInr(valuation.lme.totalUsd,fxRate))}</small>}</td></>}</tr></tfoot>
       </table></div><div className="table-bottom"><span><CircleHelp size={16}/> Only Ni, Co, Mn and Li with assay ≥ 5% contribute. Batch USD = metal mass (kg) × benchmark-equivalent factor × USD/tonne ÷ 1,000 × payable fraction. INR = USD × exchange rate. Missing eligible quotes produce partial totals. Cu and Al contribute zero.</span><span>Assayed: <strong className={valuation.totalPercent>100 ? 'danger-text' : ''}>{number(valuation.totalPercent)}%</strong> · Unassayed: <strong>{number(Math.max(0,100-valuation.totalPercent))}%</strong></span></div></section>
     {!valuation.valid && <div className="validation-message"><AlertCircle size={19}/>Enter a positive weight, composition totalling 0–100% (but not zero), and a payable percentage between 0–100%.</div>}
     {hasOld && <div className="validation-message"><AlertCircle size={19}/>Some imported quotations are older than 7 days. The calculator can compute historical values, but does not describe them as current prices.</div>}
-    {smm && smm.isExample || lme && lme.isExample ? <div className="validation-message"><AlertCircle size={19}/>Fictional sample quotations are loaded. Replace BOTH JSON documents with verified, usable prices before making any business decisions.</div> : null}
+    {(showSmm && smm?.isExample) || (showLme && lme?.isExample) ? <div className="validation-message"><AlertCircle size={19}/>Fictional sample quotations are loaded. Replace the selected example JSON documents with verified, usable prices before making any business decisions.</div> : null}
     <section className="results-section"><div className="results-heading"><div><span className="overline">STEP 05</span><h2>Estimated black mass valuation</h2></div><span className="basis-chip">BENCHMARK BASIS · NOT A BUYER OFFER</span></div>
-      <Results label="Shanghai Metals Market" market="smm" data={valuation.smm} tonnes={tonnes} example={Boolean(smm?.isExample)} rate={fxRate}/>
-      <Results label="London Metal Exchange" market="lme" data={valuation.lme} tonnes={tonnes} example={Boolean(lme?.isExample)} rate={fxRate}/>
+      {showSmm && <Results label="Shanghai Metals Market" market="smm" data={valuation.smm} tonnes={tonnes} example={Boolean(smm?.isExample)} rate={fxRate}/>}
+      {showLme && <Results label="London Metal Exchange" market="lme" data={valuation.lme} tonnes={tonnes} example={Boolean(lme?.isExample)} rate={fxRate}/>}
       <div className="disclaimer"><Info size={18}/><p><strong>Important:</strong> These are estimates under the configured buyer payable and 5% cutoff, <em>not actual black-mass selling prices.</em> When a metal price is missing, that metal is excluded from the displayed partial total; it is <strong>not assigned a zero market value</strong>. LME and SMM quotations can refer to different products, delivery terms and valuation dates. Real buyers may discount for recoveries, moisture, Cu/Al impurities, treatment, transport and payable fractions. Only paste and publish quotation data you have the right to use.</p></div>
     </section>
-    <SeparateMaterials smm={smm} lme={lme} rate={fxRate}/>
+    <SeparateMaterials smm={smm} lme={lme} rate={fxRate} selection={selection}/>
     <div className="source-footer"><span><ShieldCheck size={17}/> Only Frankfurter FX API requested · Metal pricing remains manual</span><span><FileJson size={15}/> SMM / LME manual comparison</span></div>
   </main>;
 }
