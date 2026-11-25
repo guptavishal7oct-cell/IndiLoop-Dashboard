@@ -2,19 +2,19 @@
 
 A **standalone React + TypeScript** website for indicative black-mass valuation using **two manually pasted JSON documents**, with a copyable AI-research prompt and free daily USD/INR exchange-rate lookup. The original IndiLoop dark/teal UI is preserved. **No backend, paid price feed, or API key is needed.**
 
-## V3.2: partial totals when quotes are missing
+## Buyer pricing update
 
-The calculator now **sums only priced metals** for each market independently. Unavailable metal price and value cells remain `—` (no quotation); they are not treated as verified zero-price metal. If at least one metal with a positive assay percentage has a quote, the SMM/LME totals, USD and INR per kg, per tonne, and batch total appear as a **Partial valuation**, with missing metals listed below. If there are no usable quotations for any metal present in the assay, the total stays unavailable (`—`) rather than misleadingly showing $0. Metal rows with 0% assays don't require a quote. The entered weight and percentages are not renormalized to the subset of priced metals; all per-kg / per-tonne figures still refer to the **entire black-mass batch**. Missing metal values are excluded, not asserted to be worthless.
+Only Ni, Co, Mn and Li with elemental assay at least 5% are payable; Cu and Al are excluded regardless of content. Default payable is 60%, editable. Missing eligible quotes give partial totals if another eligible quote exists, otherwise the total is unavailable. If no metal qualifies, an imported market returns zero. Per-kg and per-tonne values use the entire batch weight. Compound quotations are converted to elemental-equivalent prices before applying the formula.
 
 ## What you get
 
 - Top navigation: **Home** and **Black Mass Price Calculator**. Refresh-safe `HashRouter` (`/#/calculator` remains on the calculator after refresh).
 - **Copy AI price-research prompt** button: copies strict instructions asking a browsing AI to research SMM and LME separately, find the latest verified price per metal (or last verified recorded quote), return two import-compatible JSON blocks, and include individual quote dates/URLs. If copying is blocked, the app displays selectable prompt text.
 - Two JSON editors: **Shanghai Metals Market (SMM)** and **London Metal Exchange (LME)**, each with Apply, Template, and Clear actions.
-- Enter extracted **black mass tonnes**, **elemental metal composition percentages**, and optional **benchmark payable percentage** (100% by default).
+- Enter extracted **black mass tonnes**, **elemental metal composition percentages**, and optional **benchmark payable percentage** (60% by default).
 - Side-by-side metal prices and corresponding values **in USD and INR** for each source, followed by three result cards **per kg, per tonne, total** in both currencies for each source.
 - **Frankfurter USD → INR**: fetches its latest *available daily reference rate* from `https://api.frankfurter.dev/v2/rate/USD/INR`, shows the observation date and status, supports refresh, manual override, and last successfully saved rate if offline. This is **not an intraday forex trading price**; Frankfurter needs no API key.
-- Detects malformed JSON, duplicate rows, unsupported currency/units, salt/metal benchmark mismatch, impossible assay and missing quotations. Separate market totals are suppressed if that market is missing a positively assayed metal.
+- Detects malformed JSON, duplicate rows, unsupported currency/units, salt/metal benchmark mismatch, impossible assay and missing quotations. Missing eligible prices are clearly flagged.
 - Marks quotes older than seven days as **stale** while still allowing historical calculations; no automatic fetching or freshness claims.
 - Browser-local persistence: JSON, assay, weight and last successful FX quote survive refresh in `localStorage` on the same browser and origin. **The app never uploads your assay or JSON anywhere.** The only external request from the app is the USD/INR GET request to Frankfurter (plus browser font loading). Clear browser data to remove saved inputs.
 
@@ -83,11 +83,11 @@ Upon opening the calculator, the frontend makes one browser request to **Frankfu
 - Non-lithium benchmarks must refer to **metal**, not sulphate/sulfate, oxide, ore, scrap, etc.
 - The lithium benchmark must **explicitly identify** lithium carbonate, lithium hydroxide monohydrate, anhydrous lithium hydroxide, or lithium metal. Generic "lithium price" is rejected.
 - Metal proportions are **elemental weight percentages in extracted black mass**, not weight percentages of whole batteries or cathode compounds.
-- The UI accepts partial JSON. A market's total is only displayed if all metals with positive assay % have priced benchmarks. The other market can still show its total independently.
+- The UI accepts partial JSON. Only nickel, cobalt, manganese and lithium with elemental assay ≥5% are payable. Copper and aluminium are assay-only. Missing eligible prices produce partial totals; if no metal qualifies, an imported market returns zero. Markets are independent.
 
 ## Calculation methodology
 
-For each metal and market:
+For each eligible metal and market (Ni, Co, Mn, Li at ≥5%; others contribute zero):
 
 ```
 metal_mass_kg = black_mass_tonnes × 1,000 × (metal_percent / 100)
@@ -96,6 +96,7 @@ metal_value_usd = benchmark_equivalent_kg × (usd_per_tonne / 1,000) × (payable
 market_total = sum(metal_value_usd)
 market_usd_per_kg = market_total / (black_mass_tonnes × 1,000)
 market_usd_per_tonne = market_total / black_mass_tonnes
+market_inr_per_kg = market_usd_per_kg × USD_INR
 ```
 
 For **elemental lithium** the calculator converts to the theoretically corresponding quoted lithium compound:

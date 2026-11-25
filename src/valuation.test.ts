@@ -7,14 +7,14 @@ const mk = (rows: unknown[]) => JSON.stringify({price_date:'2026-10-13',currency
 const nickel = { metal:'Nickel', benchmark:'Nickel metal', price:20000};
 const lithiumCarbonate = {metal:'Lithium', benchmark:'Battery Grade Lithium Carbonate', price:16000};
 const lithiumHydroxide = {metal:'Lithium', benchmark:'Lithium Hydroxide Monohydrate', price:15000};
-const compare = (smm: ReturnType<typeof parseMarketJSON> | null, lme: ReturnType<typeof parseMarketJSON> | null, composition={...EMPTY_COMPOSITION,nickel:20,lithium:3}) => calculateComparison({tonnes:'2',payablePercent:'80',composition,smm,lme});
+const compare = (smm: ReturnType<typeof parseMarketJSON> | null, lme: ReturnType<typeof parseMarketJSON> | null, composition={...EMPTY_COMPOSITION,nickel:20,lithium:5}) => calculateComparison({tonnes:'2',payablePercent:'80',composition,smm,lme});
 describe('two independent black mass valuations',()=>{
   it('computes correct per-source totals, tonne and kg values',()=>{
     const smm = parseMarketJSON(mk([nickel,lithiumCarbonate]),'smm',today);
     const lme = parseMarketJSON(mk([nickel,lithiumHydroxide]),'lme',today);
     const result = compare(smm,lme);
-    const expectedSmm = (400*20000/1000 + 60*(73.89/(2*6.94))*16000/1000)*.8;
-    const expectedLme = (400*20000/1000 + 60*(41.96/6.94)*15000/1000)*.8;
+    const expectedSmm = (400*20000/1000 + 100*(73.89/(2*6.94))*16000/1000)*.8;
+    const expectedLme = (400*20000/1000 + 100*(41.96/6.94)*15000/1000)*.8;
     expect(result.smm.totalUsd).toBeCloseTo(expectedSmm);
     expect(result.lme.totalUsd).toBeCloseTo(expectedLme);
     expect(result.smm.perKgUsd).toBeCloseTo(expectedSmm/2000);
@@ -35,7 +35,7 @@ describe('two independent black mass valuations',()=>{
   });
   it('does not invent zero or a full result when all active metals lack prices',()=>{
     const onlyCopper = parseMarketJSON(mk([{metal:'Copper',benchmark:'Copper metal',price:10000}]),'lme',today);
-    const r=compare(null,onlyCopper,{...EMPTY_COMPOSITION,nickel:15,lithium:3});
+    const r=compare(null,onlyCopper,{...EMPTY_COMPOSITION,nickel:15,lithium:5});
     expect(r.lme.totalUsd).toBeNull();
     expect(r.lme.perKgUsd).toBeNull();
     expect(r.lme.included).toEqual([]);
@@ -48,7 +48,7 @@ describe('two independent black mass valuations',()=>{
     expect(r.lme.totalUsd).toBe(3200);
     expect(r.lme.perTonneUsd).toBe(1600);
     expect(r.lme.perKgUsd).toBe(1.6);
-    expect(r.lme.missing).toEqual(['lithium','cobalt','manganese']);
+    expect(r.lme.missing).toEqual(['cobalt']);
     expect(r.lme.pricedCompositionPercent).toBe(10);
     expect(r.smm.totalUsd).toBeNull();
   });
@@ -70,4 +70,12 @@ describe('two independent black mass valuations',()=>{
     expect(r.valid).toBe(false);
     expect(r.smm.totalUsd).toBeNull();
   });
+});
+
+it('applies inclusive cutoff and excludes copper and aluminium even with quotes',()=>{
+ const market = parseMarketJSON(mk([nickel, {metal:'Copper',benchmark:'Copper metal',price:10000}, {metal:'Cobalt',benchmark:'Cobalt metal',price:30000}]),'lme',today);
+ const r = calculateComparison({tonnes:1,payablePercent:60,composition:{...EMPTY_COMPOSITION,nickel:5,cobalt:4.99,copper:20,aluminium:10},smm:null,lme:market});
+ expect(r.lme.totalUsd).toBe(600); expect(r.lme.perKgUsd).toBe(.6); expect(r.lme.missing).toEqual([]); expect(r.lme.included).toEqual(['nickel']);
+ const zero = calculateComparison({tonnes:1,payablePercent:60,composition:{...EMPTY_COMPOSITION,nickel:4.99,copper:20},smm:null,lme:market});
+ expect(zero.lme.totalUsd).toBe(0); expect(zero.lme.missing).toEqual([]);
 });
