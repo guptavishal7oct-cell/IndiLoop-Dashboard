@@ -1,4 +1,4 @@
-import { METAL_IDS, type ImportedMarket, type Market, type MetalId, type Quote } from './domain';
+import { METAL_IDS, type ImportedMarket, type Market, type QuoteMetalId, type Quote } from './domain';
 
 // Molecular masses in g/mol, for transparent theoretical elemental-lithium conversion.
 export const LI_TO_CARBONATE = 73.89 / (2 * 6.94);
@@ -19,17 +19,17 @@ export function ageInDays(date: string, today = new Date()): number {
   const end = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
   return Math.floor((end - start) / 86400000);
 }
-const normalizeMetal = (value: string): MetalId | null => {
+const normalizeMetal = (value: string): QuoteMetalId | null => {
   const clean = value.toLowerCase().replace(/[_-]/g,' ').trim();
-  const aliases: Record<string, MetalId> = {
+  const aliases: Record<string, QuoteMetalId> = {
     li: 'lithium', lithium: 'lithium', 'lithium carbonate':'lithium', 'lithium hydroxide':'lithium',
     ni: 'nickel', nickel:'nickel', co:'cobalt', cobalt:'cobalt',
     mn:'manganese', manganese:'manganese', cu:'copper', copper:'copper',
-    al:'aluminium', aluminum:'aluminium', aluminium:'aluminium',
+    steel:'steel', al:'aluminium', aluminum:'aluminium', aluminium:'aluminium',
   };
   return aliases[clean] || null;
 };
-function benchmarkFactor(metal: MetalId, benchmark: string): { factor: number; description: string } {
+function benchmarkFactor(metal: QuoteMetalId, benchmark: string): { factor: number; description: string } {
   const b = benchmark.toLowerCase();
   if (metal === 'lithium') {
     if (/carbonate|li₂co₃|li2co3/.test(b)) return { factor: LI_TO_CARBONATE, description: 'Li₂CO₃ equivalent' };
@@ -38,9 +38,9 @@ function benchmarkFactor(metal: MetalId, benchmark: string): { factor: number; d
     if (/lithium metal|pure lithium|elemental lithium/.test(b)) return { factor: 1, description: 'Elemental Li' };
     throw new Error(`Unclear lithium benchmark: "${benchmark}". Specify lithium carbonate, lithium hydroxide monohydrate, anhydrous lithium hydroxide, or lithium metal.`);
   }
-  const matchers: Record<Exclude<MetalId, 'lithium'>, RegExp> = {
+  const matchers: Record<Exclude<QuoteMetalId, 'lithium'>, RegExp> = {
     nickel: /nickel/i, cobalt: /cobalt/i, manganese: /manganese/i,
-    copper: /copper/i, aluminium: /alumin(?:ium|um)/i,
+    steel: /steel/i, copper: /copper/i, aluminium: /alumin(?:ium|um)/i,
   };
   if (!matchers[metal].test(benchmark)) throw new Error(`The ${metal} benchmark "${benchmark}" does not identify ${metal}.`);
   if (/sulphate|sulfate|oxide|hydroxide|carbonate|chloride|ore|scrap|black mass|battery grade sulphate|battery grade sulfate|alumina/i.test(benchmark)) {
@@ -79,7 +79,7 @@ export function parseMarketJSON(raw: string, market: Market, today = new Date(),
   if (!rows.length) throw new Error('The prices array is empty.');
   const prices: ImportedMarket['prices'] = {};
   const warnings: string[] = [];
-  const seen = new Set<MetalId>();
+  const seen = new Set<QuoteMetalId>();
   for (const row of rows) {
     const rawMetal = row.metal ?? row.name;
     if (typeof rawMetal !== 'string') throw new Error('Each price row needs a metal name.');
@@ -99,17 +99,15 @@ export function parseMarketJSON(raw: string, market: Market, today = new Date(),
     if (!validIsoDate(quoteDate) || ageInDays(quoteDate, today) < 0) throw new Error(`${metal}: invalid quotation date; use YYYY-MM-DD on or before today.`);
     if (row.source_url !== undefined && row.source_url !== null && typeof row.source_url !== 'string') throw new Error(`${metal}: source_url must be a string URL.`);
     const sourceUrl = typeof row.source_url === 'string' && /^https?:\/\//i.test(row.source_url) ? row.source_url : undefined;
-    const priceType = row.price_type;
-    if (market === 'lme' && priceType != null && priceType !== 'fastmarkets' && priceType !== '3_month_closing' && priceType !== 'current') throw new Error(`${metal}: invalid price_type.`);
-    const quote: Quote = { priceType: market === 'lme' && (priceType === 'fastmarkets' || priceType === '3_month_closing' || priceType === 'current') ? priceType : null, priceUsdPerTonne: price, benchmark: benchmark.trim(), date: quoteDate, factor, factorDescription: description, sourceUrl };
+    const quote: Quote = { priceUsdPerTonne: price, benchmark: benchmark.trim(), date: quoteDate, factor, factorDescription: description, sourceUrl };
     prices[metal] = quote;
     const age = ageInDays(quoteDate, today);
     if (age > 7) warnings.push(`${metal} quote (${quoteDate}) is ${age} days old.`);
   }
-  if (!METAL_IDS.some(m => prices[m])) {
+  if (![...METAL_IDS, 'steel' as const].some(m => prices[m])) {
     // Allow a correctly structured JSON with known metals but no prices yet.
     // It should render unavailable values, not prevent the other market from loading.
-    if (!seen.size) throw new Error('No supported metal names found. Supply at least one of the six supported metals.');
+    if (!seen.size) throw new Error('No supported metal names found. Supply at least one of the seven supported materials.');
     warnings.push('No available quotations in this market; totals will remain unavailable.');
   }
   return { market, label: MARKET_LABEL[market], date, prices, warnings, isExample };

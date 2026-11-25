@@ -9,6 +9,7 @@ export const sampleJSON = (market: 'smm' | 'lme', today = new Date()): string =>
     { metal: 'Manganese', benchmark: 'Electrolytic manganese metal', price: 2200 },
     { metal: 'Copper', benchmark: 'Copper cathode metal', price: 11000 },
     { metal: 'Aluminium', benchmark: 'Aluminium ingot metal', price: 2800 },
+    { metal: 'Steel', benchmark: 'Steel finished product', price: null },
   ] : [
     { metal: 'Lithium', benchmark: 'LME Lithium Hydroxide Monohydrate CIF (Fastmarkets)', price: 15500 },
     { metal: 'Nickel', benchmark: 'LME Nickel metal', price: 18500 },
@@ -16,15 +17,16 @@ export const sampleJSON = (market: 'smm' | 'lme', today = new Date()): string =>
     { metal: 'Manganese', benchmark: 'Not an LME metal contract benchmark', price: null },
     { metal: 'Copper', benchmark: 'LME Copper Grade A metal', price: 10500 },
     { metal: 'Aluminium', benchmark: 'LME Aluminium metal', price: 2750 },
+    { metal: 'Steel', benchmark: 'LME Steel finished product', price: null },
   ];
   return JSON.stringify({
     source: isSmm ? 'FICTIONAL SMM SAMPLE - NOT LIVE' : 'FICTIONAL LME SAMPLE - NOT LIVE',
-    price_date, currency: 'USD', unit: 'metric_tonne', prices: prices.map(p => ({...p, ...(isSmm ? {} : {price_type: p.price === null ? null : ['Lithium','Cobalt'].includes(p.metal) ? 'fastmarkets' : '3_month_closing'}), date: p.price === null ? null : price_date, source_url: null})),
+    price_date, currency: 'USD', unit: 'metric_tonne', prices,
   }, null, 2);
 };
 export const blankTemplate = (market: 'smm' | 'lme', today = new Date()): string => {
   const template = JSON.parse(sampleJSON(market, today));
   template.source = market === 'smm' ? 'Shanghai Metals Market (SMM)' : 'London Metal Exchange (LME)';
-  template.prices = template.prices.map((p: {price: number | null}) => ({...p, price: null, date: null, source_url: null, ...(market === 'lme' ? {price_type:null} : {})}));
+  template.prices = template.prices.map((p: {price: number | null}) => ({...p, price: null}));
   return JSON.stringify(template, null, 2);
 };

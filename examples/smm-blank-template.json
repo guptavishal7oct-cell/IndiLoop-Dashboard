@@ -7,41 +7,36 @@
     {
       "metal": "Lithium",
       "benchmark": "Battery-grade lithium carbonate",
-      "price": null,
-      "date": null,
-      "source_url": null
+      "price": null
     },
     {
       "metal": "Nickel",
       "benchmark": "Nickel cathode metal",
-      "price": null,
-      "date": null,
-      "source_url": null
+      "price": null
     },
     {
       "metal": "Cobalt",
       "benchmark": "Cobalt metal",
-      "price": null,
-      "date": null,
-      "source_url": null
+      "price": null
     },
     {
       "metal": "Manganese",
       "benchmark": "Electrolytic manganese metal",
-      "price": null,
-      "date": null,
-      "source_url": null
+      "price": null
     },
     {
       "metal": "Copper",
       "benchmark": "Copper cathode metal",
-      "price": null,
-      "date": null,
-      "source_url": null
+      "price": null
     },
     {
       "metal": "Aluminium",
       "benchmark": "Aluminium ingot metal",
+      "price": null
+    },
+    {
+      "metal": "Steel",
+      "benchmark": "Steel finished product",
       "price": null,
       "date": null,
       "source_url": null
